@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.agents/
+.claude/
+.codex/
+AGENTS.md
+CLAUDE.md
+CODEX.md
+.gemini/
+GEMINI.md
+.cursor/
+.aider*
+.mcp.json

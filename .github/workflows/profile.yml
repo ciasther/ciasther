@@ -1,0 +1,74 @@
+name: Profil GitHub
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 5 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'profile.json'
+      - 'README.md'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'assets/portrait.png'
+      - '.github/workflows/profile.yml'
+  pull_request:
+    paths:
+      - 'profile.json'
+      - 'README.md'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'assets/portrait.png'
+      - '.github/workflows/profile.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  testy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Testy bez tokenu i bez sieci
+        run: python3 -m unittest discover -s tests -v
+      - name: Walidacja generowania profilu
+        run: python3 scripts/update_profile.py --render
+
+  aktualizacja:
+    needs: testy
+    if: github.event_name != 'pull_request' && github.repository == 'ciasther/ciasther' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    concurrency:
+      group: ciasther-profile-update
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Odczyt agregatów i generowanie profilu
+        env:
+          PROFILE_TOKEN: ${{ secrets.PROFILE_TOKEN }}
+        run: python3 scripts/update_profile.py --fetch
+      - name: Zapis wyłącznie wygenerowanych plików
+        env:
+          PUBLISH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -- README.md assets/stats.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              commit -m 'Aktualizacja profilu'
+          git -c credential.helper= \
+              -c 'credential.helper=!f() { printf "username=x-access-token\npassword=%s\n" "$PUBLISH_TOKEN"; }; f' \
+              push origin HEAD:main

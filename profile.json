@@ -1,0 +1,29 @@
+{
+  "username": "ciasther",
+  "name": "Sebastian Górski",
+  "birth_date": "1989-10-25",
+  "timezone": "Europe/Warsaw",
+  "tagline": "// interface -> API -> system -> device",
+  "system": [
+    ["Chassis", "Full-stack Software Engineer"],
+    ["OS", "Sonovo OS / Debian / Arch / Ubuntu"],
+    ["Kernel", "Linux 7.1.8+ / Wayland / systemd"],
+    ["Packages", "pnpm / cargo / pip / go / apt / pacman"],
+    ["Display", "React / CMS / touch-first kiosks / WPE"],
+    ["Terminal", "kitty / Bash / Zsh / SSH"],
+    ["WM", "Hyprland / Sway"]
+  ],
+  "workbench": [
+    ["CPU", "TypeScript / JavaScript / Node.js"],
+    ["GPU", "Rust / GTK4 / WPE"],
+    ["Memory", "PostgreSQL / Redis / MinIO / SQL"],
+    ["Disk", "Docker / Compose / GitHub Actions / CI/CD"],
+    ["Network", "Tailscale / Headscale / mTLS"],
+    ["AI", "Codex / Claude Code / multi-agent workflows"]
+  ],
+  "stats": {
+    "exclude_repositories": ["ciasther"],
+    "include_forks_in_history": true,
+    "include_forks_in_current_sloc": false
+  }
+}
