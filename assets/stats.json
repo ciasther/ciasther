@@ -1,11 +1,26 @@
 {
-  "updated_at": null,
-  "repos_total": null,
-  "repos_public": null,
-  "repos_private": null,
-  "code_repositories": null,
-  "current_sloc": null,
-  "commits": {"week": null, "month": null, "year": null, "lifetime": null},
-  "additions": {"week": null, "month": null, "year": null, "lifetime": null},
-  "deletions": {"week": null, "month": null, "year": null, "lifetime": null}
+  "updated_at": "2026-09-19T09:34:35.181552Z",
+  "repos_total": 2,
+  "repos_public": 2,
+  "repos_private": 0,
+  "code_repositories": 1,
+  "current_sloc": 3453,
+  "commits": {
+    "week": 0,
+    "month": 0,
+    "year": 0,
+    "lifetime": 0
+  },
+  "additions": {
+    "week": 0,
+    "month": 0,
+    "year": 0,
+    "lifetime": 0
+  },
+  "deletions": {
+    "week": 0,
+    "month": 0,
+    "year": 0,
+    "lifetime": 0
+  }
 }
