@@ -21,14 +21,14 @@ API = "https://api.github.com"
 API_VERSION = "2026-03-10"
 
 HISTORY_QUERY = r"""
-query ProfileHistory($owner: String!, $name: String!, $author: ID!, $after: String) {
+query ProfileHistory($owner: String!, $name: String!, $after: String) {
   repository(owner: $owner, name: $name) {
     defaultBranchRef {
       target {
         ... on Commit {
-          history(first: 100, after: $after, author: {id: $author}) {
+          history(first: 40, after: $after) {
             pageInfo { hasNextPage endCursor }
-            nodes { oid authoredDate additions deletions }
+            nodes { oid authoredDate additions deletions author { email user { login } } }
           }
         }
       }
@@ -89,21 +89,21 @@ class GitHubClient:
         }
         if body is not None:
             headers["Content-Type"] = "application/json"
-        for attempt in range(3):
+        for attempt in range(5):
             req = Request(API + path, data=body, headers=headers, method="POST" if body else "GET")
             try:
                 with self._opener.open(req, timeout=30) as response:
                     return json.loads(response.read().decode("utf-8"))
             except HTTPError as exc:
-                if exc.code in (429, 500, 502, 503, 504) and attempt < 2:
-                    time.sleep(2**attempt)
+                if exc.code in (429, 500, 502, 503, 504) and attempt < 4:
+                    time.sleep(2 ** (attempt + 1))
                     continue
                 if exc.code in (401, 403):
                     raise ProfileError("PROFILE_TOKEN nie ma wymaganych uprawnień albo wygasł.") from None
                 raise ProfileError(f"GitHub API zwróciło HTTP {exc.code}.") from None
             except (URLError, TimeoutError, json.JSONDecodeError):
-                if attempt < 2:
-                    time.sleep(2**attempt)
+                if attempt < 4:
+                    time.sleep(2 ** (attempt + 1))
                     continue
                 raise ProfileError("Nie udało się odczytać GitHub API.") from None
         raise ProfileError("Nie udało się odczytać GitHub API.")
@@ -136,6 +136,8 @@ class GitHubClient:
                 default_branch = raw.get("default_branch")
                 if default_branch is not None and not isinstance(default_branch, str):
                     raise ProfileError("Niepoprawna gałąź domyślna.")
+                if raw.get("size") == 0:
+                    default_branch = None
                 repos.append(Repo(
                     owner=owner,
                     name=name,
@@ -148,34 +150,44 @@ class GitHubClient:
                 return repos
         raise ProfileError("Przekroczono limit stronicowania repozytoriów.")
 
-    def authored_history(self, repo: Repo, author_id: str) -> list[dict[str, Any]]:
+    def _history_page(self, repo: Repo, after: str | None, lines: bool) -> tuple[list[Any], dict[str, Any]] | None:
+        fields = "additions deletions " if lines else ""
+        payload = {
+            "query": HISTORY_QUERY.replace("additions deletions ", fields),
+            "variables": {"owner": repo.owner, "name": repo.name, "after": after},
+        }
+        raw = self.request("/graphql", payload)
+        if not isinstance(raw, dict):
+            raise ProfileError("GraphQL nie zwrócił historii commitów.")
+        errors = raw.get("errors") or []
+        if errors and not (lines and all(_line_count_error(e) for e in errors)):
+            raise ProfileError("GraphQL nie zwrócił historii commitów.")
+        try:
+            ref = raw["data"]["repository"]["defaultBranchRef"]
+            if ref is None:
+                return None
+            history = ref["target"]["history"]
+            nodes, page = history["nodes"], history["pageInfo"]
+        except (KeyError, TypeError):
+            raise ProfileError("Niepełna historia commitów GraphQL.") from None
+        if not isinstance(nodes, list) or not isinstance(page, dict):
+            raise ProfileError("Niepoprawna historia commitów GraphQL.")
+        if errors:
+            # GitHub nie liczy linii dla ogromnych commitów i zeruje cały węzeł; bierzemy go bez liczników.
+            bare = self._history_page(repo, after, lines=False)
+            if bare is None or len(bare[0]) != len(nodes):
+                raise ProfileError("Niespójna historia commitów GraphQL.")
+            nodes = [node if node is not None else plain for node, plain in zip(nodes, bare[0])]
+        return nodes, page
+
+    def history(self, repo: Repo) -> list[dict[str, Any]]:
         after: str | None = None
         result: list[dict[str, Any]] = []
-        for _ in range(500):
-            payload = {
-                "query": HISTORY_QUERY,
-                "variables": {"owner": repo.owner, "name": repo.name, "author": author_id, "after": after},
-            }
-            raw = self.request("/graphql", payload)
-            if not isinstance(raw, dict) or raw.get("errors"):
-                raise ProfileError("GraphQL nie zwrócił historii commitów.")
-            try:
-                repository = raw["data"]["repository"]
-            except (KeyError, TypeError):
-                raise ProfileError("Niepełna odpowiedź GraphQL.") from None
-            if repository is None:
-                raise ProfileError("Brak dostępu do jednego z repozytoriów.")
-            ref = repository.get("defaultBranchRef")
-            if ref is None:
+        for _ in range(2000):
+            got = self._history_page(repo, after, lines=True)
+            if got is None:
                 return result
-            try:
-                history = ref["target"]["history"]
-                nodes = history["nodes"]
-                page = history["pageInfo"]
-            except (KeyError, TypeError):
-                raise ProfileError("Niepełna historia commitów GraphQL.") from None
-            if not isinstance(nodes, list):
-                raise ProfileError("Niepoprawna historia commitów GraphQL.")
+            nodes, page = got
             result.extend(nodes)
             if not page.get("hasNextPage"):
                 return result
@@ -183,6 +195,10 @@ class GitHubClient:
             if not isinstance(after, str) or not after:
                 raise ProfileError("Niepoprawny kursor historii commitów.")
         raise ProfileError("Historia repozytorium jest zbyt duża do bezpiecznego odczytu.")
+
+
+def _line_count_error(error: Any) -> bool:
+    return isinstance(error, dict) and isinstance(error.get("path"), list) and error["path"][-1:] in (["additions"], ["deletions"])
 
 
 def _askpass_script(directory: Path) -> Path:
@@ -238,7 +254,16 @@ def empty_windows() -> dict[str, int]:
     return {"week": 0, "month": 0, "year": 0, "lifetime": 0}
 
 
-def aggregate_history(client: GitHubClient, repos: list[Repo], author_id: str, now: datetime,
+def is_author(node: dict[str, Any], username: str) -> bool:
+    # Commity z e-maili niepodpiętych do konta (user=None) w własnych repo liczą się jako właściciela.
+    author = node.get("author") or {}
+    user = author.get("user")
+    if isinstance(user, dict):
+        return str(user.get("login", "")).lower() == username.lower()
+    return "[bot]" not in str(author.get("email") or "")
+
+
+def aggregate_history(client: GitHubClient, repos: list[Repo], username: str, now: datetime,
                       excluded: set[str], include_forks: bool) -> tuple[dict[str, int], dict[str, int], dict[str, int]]:
     commits = empty_windows()
     additions = empty_windows()
@@ -252,9 +277,11 @@ def aggregate_history(client: GitHubClient, repos: list[Repo], author_id: str, n
     for repo in repos:
         if repo.name in excluded or repo.disabled or not repo.default_branch or (repo.fork and not include_forks):
             continue
-        for node in client.authored_history(repo, author_id):
+        for node in client.history(repo):
             if not isinstance(node, dict):
                 raise ProfileError("Niepoprawny commit GraphQL.")
+            if not is_author(node, username):
+                continue
             oid = node.get("oid")
             if not isinstance(oid, str) or not re.fullmatch(r"[0-9a-f]{40,64}", oid):
                 raise ProfileError("Niepoprawny identyfikator commita.")
@@ -267,8 +294,8 @@ def aggregate_history(client: GitHubClient, repos: list[Repo], author_id: str, n
                 raise ProfileError("Niepoprawna data commita.") from None
             if authored.tzinfo is None:
                 raise ProfileError("Commit bez strefy czasowej.")
-            added = _natural(node.get("additions"), "additions")
-            deleted = _natural(node.get("deletions"), "deletions")
+            added = _natural(node.get("additions") or 0, "additions")
+            deleted = _natural(node.get("deletions") or 0, "deletions")
             commits["lifetime"] += 1
             additions["lifetime"] += added
             deletions["lifetime"] += deleted
@@ -289,14 +316,13 @@ def collect(token: str, username: str, now: datetime, excluded: set[str], includ
     actual = _safe_login(account.get("login"))
     if actual.lower() != username.lower():
         raise ProfileError("PROFILE_TOKEN należy do innego konta GitHub.")
-    author_id = account.get("node_id")
-    if not isinstance(author_id, str) or not author_id:
-        raise ProfileError("Brak identyfikatora użytkownika GitHub.")
     repos = client.owned_repositories(username)
     public = sum(not repo.private for repo in repos)
     private = sum(repo.private for repo in repos)
+    if "owned_private_repos" in account and account["owned_private_repos"] != private:
+        raise ProfileError("PROFILE_TOKEN nie widzi wszystkich prywatnych repozytoriów. Nadaj mu odczyt wszystkich repo.")
     commits, additions, deletions = aggregate_history(
-        client, repos, author_id, now, excluded, include_forks_history
+        client, repos, username, now, excluded, include_forks_history
     )
     sloc, code_repositories = current_sloc(repos, token, excluded, include_forks_sloc)
     return {

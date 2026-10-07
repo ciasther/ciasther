@@ -92,11 +92,13 @@ def fmt(value: int | None) -> str:
     return "—" if value is None else f"{value:,}"
 
 
-def fmt_periods(values: dict[str, int | None], signed: bool = False) -> str:
+def fmt_periods(values: dict[str, int | None], signed: bool | str = False) -> str:
     def one(period: str, label: str) -> str:
         value = values[period]
         if value is None:
             text = "—"
+        elif signed == "-":
+            text = f"-{value:,}"
         elif signed:
             text = f"{value:+,}"
         else:
@@ -118,14 +120,13 @@ def render_right(config: dict[str, Any], stats: dict[str, Any], now: datetime) -
     lines.extend(_line(k, v) for k, v in config["system"])
     lines.extend(["", f"{username}@workbench", "─" * 66])
     lines.extend(_line(k, v) for k, v in config["workbench"])
-    lines.append(_line("Uptime", f"{years} years, {months} months, {days} days  [since 25.10.1989]"))
+    lines.append(_line("Uptime", f"{years} years, {months} months, {days} days  [since {born:%d.%m.%Y}]"))
     lines.extend(["", f"{username}@github.stats", "─" * 66])
     lines.append(_line("Repos", f"{fmt(stats['repos_total'])} total  ({fmt(stats['repos_public'])} public / {fmt(stats['repos_private'])} private)"))
     lines.append(_line("Code", f"{fmt(stats['current_sloc'])} SLOC  ({fmt(stats['code_repositories'])} owned non-fork repos)"))
     lines.append(_line("Commits", fmt_periods(stats["commits"])))
     lines.append(_line("Added", fmt_periods(stats["additions"], signed=True)))
-    deleted = {k: (None if v is None else -v) for k, v in stats["deletions"].items()}
-    lines.append(_line("Deleted", fmt_periods(deleted, signed=True)))
+    lines.append(_line("Deleted", fmt_periods(stats["deletions"], signed="-")))
     net = {
         k: None if stats["additions"][k] is None else stats["additions"][k] - stats["deletions"][k]
         for k in PERIODS

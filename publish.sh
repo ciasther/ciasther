@@ -14,8 +14,7 @@ if git rev-parse --show-toplevel >/dev/null 2>&1; then
 fi
 
 printf '%s\n' 'Powstanie PUBLICZNE repozytorium ciasther/ciasther z plikami tej paczki.'
-printf '%s\n' 'Dodaj token classic z JEDYNYM zakresem read:user. Nie używaj głównego tokenu do repozytoriów.'
-printf '%s\n' 'Najpierw włącz na profilu: Contribution settings → Private contributions.'
+printf '%s\n' 'Dodaj fine-grained token: All repositories, Contents: Read-only. Szczegóły: START.md.'
 read -r -s -p 'Wklej dedykowany token (wpis jest ukryty): ' PROFILE_TOKEN
 printf '\n'
 [[ -n "$PROFILE_TOKEN" ]] || fail 'Token jest pusty.'

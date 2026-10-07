@@ -10,11 +10,10 @@ Research: 16 września 2026. Treść profilu opiera się na podanym koncie GitHu
 
 - [Profil README: wymagane repozytorium i położenie README.md](https://docs.github.com/en/account-and-profile/how-tos/profile-customization/managing-your-profile-readme).
 - [Oficjalny poradnik GitHub: warianty jasny i ciemny przez picture](https://github.blog/developer-skills/github/how-to-make-your-images-in-markdown-on-github-adjust-for-dark-mode-and-light-mode/).
-- [REST /user, read:user i owned_private_repos](https://docs.github.com/en/rest/users/users#get-the-authenticated-user).
-- [GraphQL: ContributionsCollection, ContributionCalendar i restrictedContributionsCount](https://docs.github.com/en/graphql/reference/users).
+- [REST /user i owned_private_repos](https://docs.github.com/en/rest/users/users#get-the-authenticated-user).
+- [GraphQL Commit.history](https://docs.github.com/en/graphql/reference/objects#commit).
 - [Zakresy OAuth / PAT classic](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps).
 - [Zarządzanie tokenami](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens).
-- [Prywatne contributions na profilu](https://docs.github.com/en/account-and-profile/how-tos/contribution-settings/manage-visibility-settings-for-private-contributions-and-achievements).
 - [Harmonogramy Actions i ograniczenia](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
 - [actions/checkout v7.0.1](https://github.com/actions/checkout/releases/tag/v7.0.1), zweryfikowany ref `3d3c42e5aac5ba805825da76410c181273ba90b1`.
 

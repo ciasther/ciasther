@@ -2,7 +2,11 @@
 
 ## Repositories
 
-The workflow calls `GET /user/repos?affiliation=owner&visibility=all` and publishes only counts. A fine-grained PAT must have access to **all repositories** owned by `ciasther`; otherwise GitHub can legitimately return only the subset selected for the token.
+The workflow calls `GET /user/repos?affiliation=owner&visibility=all` and publishes only counts. A fine-grained PAT must have access to **all repositories** owned by `ciasther`; otherwise GitHub can legitimately return only the subset selected for the token. If `/user` reports more private repositories than the token can list, the fetch fails.
+
+## Failures
+
+If the fetch fails, the workflow still re-renders `README.md` with the last good `assets/stats.json`, so `Uptime` stays current. Then the job fails, so the error is visible.
 
 ## Current code size (`Code`)
 
@@ -12,7 +16,7 @@ This is deliberately called **SLOC** in the README rather than pretending to be 
 
 ## History (`Commits`, `Added`, `Deleted`, `Net`)
 
-GitHub GraphQL `Commit.history(author: {id: ...})` is read for the default branch of each owned repository. Every commit contributes GitHub's own `additions` and `deletions`. Duplicate OIDs across forks/repositories are de-duplicated globally.
+GitHub GraphQL `Commit.history` is read for the default branch of each owned repository. A commit counts when its author is `ciasther` or an e-mail not linked to any GitHub account (local machine e-mails). Bots (`[bot]`) and other GitHub users are skipped. Every commit contributes GitHub's own `additions` and `deletions`; for huge commits GitHub returns no line counts, so they count as a commit with 0 lines. Duplicate OIDs across forks/repositories are de-duplicated globally. Empty repositories are skipped.
 
 Periods are rolling windows from the workflow execution time:
 

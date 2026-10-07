@@ -42,7 +42,7 @@ jobs:
     needs: testy
     if: github.event_name != 'pull_request' && github.repository == 'ciasther/ciasther' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 30
     concurrency:
       group: ciasther-profile-update
       cancel-in-progress: false
@@ -53,6 +53,8 @@ jobs:
         with:
           persist-credentials: false
       - name: Odczyt agregatów i generowanie profilu
+        id: fetch
+        continue-on-error: true
         env:
           PROFILE_TOKEN: ${{ secrets.PROFILE_TOKEN }}
         run: python3 scripts/update_profile.py --fetch
@@ -72,3 +74,8 @@ jobs:
           git -c credential.helper= \
               -c 'credential.helper=!f() { printf "username=x-access-token\npassword=%s\n" "$PUBLISH_TOKEN"; }; f' \
               push origin HEAD:main
+      - name: Błąd odczytu statystyk
+        if: steps.fetch.outcome == 'failure'
+        run: |
+          echo "::error::Statystyki nieodświeżone. Uptime zaktualizowany. Sprawdź log kroku odczytu."
+          exit 1

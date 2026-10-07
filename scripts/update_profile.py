@@ -37,23 +37,29 @@ def atomic_write(path: Path, text: str) -> bool:
     return True
 
 
+def fetch_stats(config: dict, now: datetime) -> dict:
+    options = config.get("stats", {})
+    return validate_stats(collect(
+        token=os.environ.get("PROFILE_TOKEN", ""),
+        username=config["username"],
+        now=now,
+        excluded=set(options.get("exclude_repositories", [])),
+        include_forks_history=bool(options.get("include_forks_in_history", True)),
+        include_forks_sloc=bool(options.get("include_forks_in_current_sloc", False)),
+    ))
+
+
 def run(root: Path, fetch: bool, now: datetime | None = None) -> int:
     now = now or datetime.now(timezone.utc)
     config = load_json(root / "profile.json")
     stats_path = root / "assets" / "stats.json"
     stats = validate_stats(load_json(stats_path))
+    error: ProfileError | None = None
     if fetch:
-        token = os.environ.get("PROFILE_TOKEN", "")
-        options = config.get("stats", {})
-        stats = collect(
-            token=token,
-            username=config["username"],
-            now=now,
-            excluded=set(options.get("exclude_repositories", [])),
-            include_forks_history=bool(options.get("include_forks_in_history", True)),
-            include_forks_sloc=bool(options.get("include_forks_in_current_sloc", False)),
-        )
-        validate_stats(stats)
+        try:
+            stats = fetch_stats(config, now)
+        except ProfileError as exc:
+            error, fetch = exc, False
     portrait_path = root / "assets" / "portrait.webp"
     if not portrait_path.is_file():
         raise ProfileError("Brak assets/portrait.webp.")
@@ -65,6 +71,8 @@ def run(root: Path, fetch: bool, now: datetime | None = None) -> int:
         changes += atomic_write(stats_path, json.dumps(stats, ensure_ascii=False, indent=2) + "\n")
     changes += atomic_write(readme_path, new_readme)
     print(f"Profil gotowy. Zmienione pliki: {changes}.")
+    if error:
+        raise error
     return 0
 
 
