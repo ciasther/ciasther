@@ -245,6 +245,8 @@ class IntegrationTests(unittest.TestCase):
         self.assertNotIn("pull_request_target", workflow)
         self.assertIn("git add -- README.md assets/stats.json", workflow)
         self.assertIn("steps.fetch.outcome == 'failure'", workflow)
+        self.assertNotIn("ubuntu-", workflow)
+        self.assertIn("head.repo.full_name == github.repository", workflow)
 
     def test_docs_do_not_contain_pat_literals(self):
         for path in (ROOT / "README.md", ROOT / "START.md", ROOT / "docs" / "METRICS.md"):

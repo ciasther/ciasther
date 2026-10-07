@@ -27,7 +27,9 @@ permissions:
 
 jobs:
   testy:
-    runs-on: ubuntu-24.04
+    # Self-hosted w publicznym repo: obcy kod z forków nie może trafić na runner.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, linux, sonovo-server]
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -41,7 +43,7 @@ jobs:
   aktualizacja:
     needs: testy
     if: github.event_name != 'pull_request' && github.repository == 'ciasther/ciasther' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, linux, sonovo-server]
     timeout-minutes: 30
     concurrency:
       group: ciasther-profile-update
