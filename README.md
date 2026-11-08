@@ -22,17 +22,17 @@ Memory   : PostgreSQL / Redis / MinIO / SQL
 Disk     : Docker / Compose / GitHub Actions / CI/CD
 Network  : Tailscale / Headscale / mTLS
 AI       : Codex / Claude Code / multi-agent workflows
-Uptime   : 37 years, 0 months, 13 days  [since 25.10.1989]
+Uptime   : 37 years, 0 months, 14 days  [since 25.10.1989]
 
 ciasther@github.stats
 ──────────────────────────────────────────────────────────────────
 Repos    : 31 total  (2 public / 29 private)
-Code     : 1,577,080 SLOC  (27 owned non-fork repos)
-Commits  : 7d 271 | 30d 1,078 | 365d 3,763 | life 3,763
-Added    : 7d +184,479 | 30d +830,817 | 365d +8,004,807 | life +8,004,807
-Deleted  : 7d -40,736 | 30d -260,385 | 365d -3,581,870 | life -3,581,870
-Net      : 7d +143,743 | 30d +570,432 | 365d +4,422,937 | life +4,422,937
-Updated  : 2026-11-07 12:45 CET
+Code     : 1,593,843 SLOC  (27 owned non-fork repos)
+Commits  : 7d 264 | 30d 1,084 | 365d 3,777 | life 3,777
+Added    : 7d +212,583 | 30d +857,036 | 365d +8,033,015 | life +8,033,015
+Deleted  : 7d -48,205 | 30d -267,716 | 365d -3,589,425 | life -3,589,425
+Net      : 7d +164,378 | 30d +589,320 | 365d +4,443,590 | life +4,443,590
+Updated  : 2026-11-08 12:58 CET
 
 ● ● ● ● ● ● ● ●</code></pre></td>
 </tr>
