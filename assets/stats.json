@@ -1,26 +1,26 @@
 {
-  "updated_at": "2026-11-26T15:23:14.012982Z",
+  "updated_at": "2026-11-27T15:10:54.488524Z",
   "repos_total": 36,
   "repos_public": 2,
   "repos_private": 34,
   "code_repositories": 32,
-  "current_sloc": 2184190,
+  "current_sloc": 2188226,
   "commits": {
-    "week": 476,
-    "month": 1451,
-    "year": 4730,
-    "lifetime": 4730
+    "week": 447,
+    "month": 1440,
+    "year": 4764,
+    "lifetime": 4764
   },
   "additions": {
-    "week": 353574,
-    "month": 1228994,
-    "year": 8918902,
-    "lifetime": 8918902
+    "week": 299947,
+    "month": 1182803,
+    "year": 9580582,
+    "lifetime": 9580582
   },
   "deletions": {
-    "week": 42204,
-    "month": 286064,
-    "year": 3715800,
-    "lifetime": 3715800
+    "week": 32553,
+    "month": 197324,
+    "year": 4342139,
+    "lifetime": 4342139
   }
 }
